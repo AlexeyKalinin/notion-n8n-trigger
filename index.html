@@ -11,18 +11,25 @@
         }
         pre {
             background: white;
-            padding: 10px;
+            padding: 15px;
             border-radius: 5px;
+            white-space: pre-wrap;
         }
+        .success { color: green; }
+        .error { color: red; }
     </style>
 </head>
 <body>
-    <h3>Sending to n8n...</h3>
+    <h3>n8n Webhook Trigger</h3>
     <pre id="log"></pre>
     
     <script>
-        const log = (msg) => {
-            document.getElementById('log').innerHTML += msg + '\n';
+        const log = (msg, type = '') => {
+            const el = document.getElementById('log');
+            const span = document.createElement('span');
+            span.className = type;
+            span.textContent = msg + '\n';
+            el.appendChild(span);
         };
 
         // n8n webhook URL
@@ -30,10 +37,12 @@
         
         const params = Object.fromEntries(new URLSearchParams(window.location.search));
         
-        log('URL: ' + N8N_URL);
-        log('Params: ' + JSON.stringify(params, null, 2));
+        log('📍 URL: ' + N8N_URL);
+        log('📦 Параметры: ' + JSON.stringify(params, null, 2));
         log('---');
         
+        // Method 1: Try with CORS
+        log('🚀 Попытка 1: Обычный запрос...');
         fetch(N8N_URL, {
             method: 'POST',
             headers: {
@@ -42,26 +51,39 @@
             body: JSON.stringify(params)
         })
         .then(response => {
-            log('Status: ' + response.status);
-            log('Status Text: ' + response.statusText);
+            log('✅ Статус: ' + response.status, 'success');
             return response.text();
         })
         .then(data => {
-            log('Response: ' + data);
-            log('✅ SUCCESS');
+            log('✅ Ответ: ' + (data || 'OK'), 'success');
+            setTimeout(() => window.close(), 3000);
         })
         .catch(error => {
-            log('❌ ERROR: ' + error.message);
+            log('❌ Ошибка: ' + error.message, 'error');
             
-            // Try again with no-cors mode
-            log('Trying with no-cors mode...');
-            fetch(N8N_URL, {
+            // Method 2: No-CORS mode
+            log('\n🚀 Попытка 2: Режим no-cors...');
+            return fetch(N8N_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 body: JSON.stringify(params)
-            })
-            .then(() => log('Sent with no-cors (no response available)'))
-            .catch(e => log('Failed with no-cors: ' + e.message));
+            });
+        })
+        .then(() => {
+            log('✅ Отправлено (no-cors mode)', 'success');
+            log('\n⚠️  В режиме no-cors ответ недоступен');
+            log('Проверьте n8n для подтверждения получения');
+            
+            // Method 3: Image beacon fallback
+            log('\n🚀 Попытка 3: Image beacon...');
+            const img = new Image();
+            const urlParams = new URLSearchParams(params).toString();
+            img.src = N8N_URL + '?' + urlParams;
+            img.onload = () => log('✅ Image beacon отправлен', 'success');
+            img.onerror = () => log('⚠️  Image beacon завершен');
+        })
+        .catch(e => {
+            log('❌ Все методы не сработали: ' + e.message, 'error');
         });
     </script>
 </body>
