@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>n8n Debug</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            padding: 20px; 
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .log { 
+            background: #f5f5f5; 
+            padding: 10px; 
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .url {
+            background: #e3f2fd;
+            padding: 5px;
+            word-break: break-all;
+        }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover { background: #1976D2; }
+    </style>
+</head>
+<body>
+    <h2>n8n Webhook Debug</h2>
+    
+    <div id="info"></div>
+    <div id="urls"></div>
+    <div id="actions"></div>
+    <div id="log"></div>
+    
+    <script>
+        const WEBHOOKS = {
+            test: 'https://n8n.wefiftytwo.com/webhook-test/ats-score',
+            prod: 'https://n8n.wefiftytwo.com/webhook/ats-score'
+        };
+        
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('mode') || 'test';
+        params.delete('mode');
+        
+        const baseUrl = WEBHOOKS[mode];
+        const queryString = params.toString();
+        const timestamp = Date.now();
+        
+        // Show info
+        document.getElementById('info').innerHTML = `
+            <div class="log">
+                <strong>Mode:</strong> ${mode}<br>
+                <strong>Base URL:</strong> ${baseUrl}<br>
+                <strong>Parameters:</strong> ${queryString || 'none'}<br>
+                <strong>Timestamp:</strong> ${timestamp}
+            </div>
+        `;
+        
+        // Build URLs
+        const getUrl = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+        const getUrlWithCache = `${getUrl}${queryString ? '&' : '?'}_t=${timestamp}`;
+        
+        document.getElementById('urls').innerHTML = `
+            <div class="log">
+                <strong>GET URL:</strong><br>
+                <div class="url">${getUrl}</div>
+                <strong>GET URL (anti-cache):</strong><br>
+                <div class="url">${getUrlWithCache}</div>
+            </div>
+        `;
+        
+        // Action buttons
+        document.getElementById('actions').innerHTML = `
+            <div class="log">
+                <button onclick="testFetch()">Test Fetch GET</button>
+                <button onclick="testImage()">Test Image Beacon</button>
+                <button onclick="testPost()">Test POST</button>
+                <button onclick="testAll()">Test All Methods</button>
+            </div>
+        `;
+        
+        const log = (msg) => {
+            const div = document.createElement('div');
+            div.className = 'log';
+            div.innerHTML = `${new Date().toISOString().substr(11, 8)} - ${msg}`;
+            document.getElementById('log').appendChild(div);
+        };
+        
+        window.testFetch = () => {
+            log('Testing GET fetch...');
+            const url = getUrlWithCache;
+            log(`URL: ${url}`);
+            
+            fetch(url, {mode: 'no-cors', cache: 'no-store'})
+                .then(() => log('✅ Fetch completed (no-cors mode)'))
+                .catch(e => log('❌ Fetch error: ' + e.message));
+        };
+        
+        window.testImage = () => {
+            log('Testing Image beacon...');
+            const url = getUrlWithCache;
+            log(`URL: ${url}`);
+            
+            const img = new Image();
+            img.src = url;
+            img.onload = () => log('✅ Image loaded (unexpected)');
+            img.onerror = () => log('✅ Image request sent (error expected)');
+        };
+        
+        window.testPost = () => {
+            log('Testing POST...');
+            const data = Object.fromEntries(params);
+            log(`Data: ${JSON.stringify(data)}`);
+            
+            fetch(baseUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(data)
+            })
+                .then(() => log('✅ POST completed (no-cors mode)'))
+                .catch(e => log('❌ POST error: ' + e.message));
+        };
+        
+        window.testAll = () => {
+            testFetch();
+            setTimeout(testImage, 100);
+            setTimeout(testPost, 200);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>n8n</title>
+</head>
+<body>
+    <img id="beacon" style="display:none">
+    <script>
+        // Ultra simple version - just image beacon
+        const params = window.location.search;
+        const url = 'https://n8n.wefiftytwo.com/webhook-test/ats-score' + params;
+        
+        document.getElementById('beacon').src = url;
+        
+        setTimeout(() => {
+            window.close();
+        }, 100);
+    </script>
+</body>
+</html>

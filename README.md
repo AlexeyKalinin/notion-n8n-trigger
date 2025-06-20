@@ -7,56 +7,70 @@
 - **Test**: `https://n8n.wefiftytwo.com/webhook-test/ats-score`
 - **Production**: `https://n8n.wefiftytwo.com/webhook/ats-score`
 
-## Использование
+## ⚠️ Известные проблемы
 
-### Основная страница (с анимацией)
+1. **Задержка GitHub Pages** - первый запуск может занять 20-30 секунд из-за кэширования
+2. **Параметры могут не передаваться** - используйте `simple.html` или `debug.html` для диагностики
+
+## Страницы
+
+### simple.html - Самая простая версия (рекомендуется)
 ```
-# Test mode (по умолчанию)
-https://alexeykalinin.github.io/notion-n8n-trigger/?param1=value1&param2=value2
-
-# Production mode
-https://alexeykalinin.github.io/notion-n8n-trigger/?mode=prod&param1=value1&param2=value2
-
-# С отладкой (не закрывает окно)
-https://alexeykalinin.github.io/notion-n8n-trigger/?debug=true&param1=value1
+https://alexeykalinin.github.io/notion-n8n-trigger/simple.html?name=Alexey&task=Test
 ```
+Использует только image beacon - максимально надежно.
 
-### Мгновенный триггер (без UI)
+### instant.html - Быстрая версия
 ```
 # Test mode
-https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?param1=value1
+https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?name=Alexey&task=Test
 
 # Production mode  
-https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?mode=prod&param1=value1
+https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?mode=prod&name=Alexey&task=Test
 ```
+
+### debug.html - Отладочная версия
+```
+https://alexeykalinin.github.io/notion-n8n-trigger/debug.html?name=Alexey&task=Test
+```
+Показывает все URL и позволяет тестировать разные методы отправки.
+
+### redirect.html - Прямой редирект
+```
+https://alexeykalinin.github.io/notion-n8n-trigger/redirect.html?mode=test&name=Alexey&task=Test
+```
+Делает прямой редирект на webhook URL.
+
+### test.html - Тестирование всех методов
+```
+https://alexeykalinin.github.io/notion-n8n-trigger/test.html?name=Alexey&task=Test
+```
+
+## Если не работает
+
+1. **Используйте `simple.html`** - самый надежный вариант
+2. **Откройте `debug.html`** и проверьте что URL формируется правильно
+3. **Проверьте в n8n**:
+   - Webhook активен
+   - Принимает GET запросы
+   - Смотрите execution history
+
+4. **Попробуйте прямую ссылку** в браузере:
+   ```
+   https://n8n.wefiftytwo.com/webhook-test/ats-score?test=123
+   ```
 
 ## Примеры для Notion
 
-**Простая ссылка (test):**
+**Простая ссылка:**
 ```
-https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?action=analyze&doc=resume
-```
-
-**Production с параметрами:**
-```
-https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?mode=prod&action=process&id=12345
+https://alexeykalinin.github.io/notion-n8n-trigger/simple.html?action=analyze&doc=resume
 ```
 
 **С формулой Notion:**
 ```
-"https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?mode=prod&id=" + prop("ID") + "&name=" + prop("Name")
+"https://alexeykalinin.github.io/notion-n8n-trigger/simple.html?id=" + prop("ID") + "&name=" + prop("Name")
 ```
-
-## Как это работает
-
-1. Страница отправляет запрос тремя способами для надежности:
-   - fetch с mode: 'no-cors'
-   - Image beacon
-   - POST запрос
-
-2. Параметр `mode` определяет какой webhook использовать (test/prod)
-
-3. Все остальные параметры передаются в n8n
 
 ## В n8n
 
@@ -64,18 +78,10 @@ https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?mode=prod&action
 ```json
 {
   "query": {
-    "param1": "value1",
-    "param2": "value2"
+    "name": "Alexey",
+    "task": "Test"
   }
 }
 ```
 
-Используйте `{{ $json.query.param1 }}` для доступа к параметрам.
-
-## Отладка
-
-Если webhook не срабатывает:
-
-1. Добавьте `?debug=true` к URL чтобы увидеть какой webhook используется
-2. Проверьте что webhook в n8n активен и настроен на GET/POST
-3. Проверьте логи n8n для входящих запросов
+Используйте `{{ $json.query.name }}` для доступа к параметрам.

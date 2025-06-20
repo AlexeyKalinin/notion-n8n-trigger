@@ -7,6 +7,7 @@
         body { font-family: monospace; padding: 20px; }
         pre { background: #f5f5f5; padding: 10px; }
         .log { margin: 5px 0; }
+        .url { color: #1976D2; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -14,9 +15,9 @@
     <div id="log"></div>
     
     <script>
-        const log = (msg) => {
+        const log = (msg, isUrl = false) => {
             const div = document.createElement('div');
-            div.className = 'log';
+            div.className = isUrl ? 'log url' : 'log';
             div.textContent = new Date().toISOString().substr(11, 8) + ' - ' + msg;
             document.getElementById('log').appendChild(div);
         };
@@ -30,37 +31,46 @@
         const mode = params.get('mode') || 'test';
         params.delete('mode');
         
-        const url = WEBHOOKS[mode];
-        const query = params.toString();
+        const baseUrl = WEBHOOKS[mode];
+        const queryString = params.toString();
         
         log(`Mode: ${mode}`);
-        log(`URL: ${url}`);
-        log(`Params: ${query}`);
+        log(`Base URL: ${baseUrl}`);
+        log(`Query String: ${queryString || '(empty)'}`);
         log('---');
         
-        // Test all methods
-        log('Method 1: GET fetch...');
-        fetch(url + '?' + query, {mode: 'no-cors'})
+        // Test all methods with full URLs
+        const getUrl = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+        
+        log('Method 1: GET fetch');
+        log(getUrl, true);
+        fetch(getUrl, {mode: 'no-cors'})
             .then(() => log('✓ GET fetch sent'))
             .catch(e => log('✗ GET fetch error: ' + e.message));
         
-        log('Method 2: POST fetch...');
-        fetch(url, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify(Object.fromEntries(params))
-        })
-            .then(() => log('✓ POST fetch sent'))
-            .catch(e => log('✗ POST fetch error: ' + e.message));
+        setTimeout(() => {
+            log('Method 2: Image beacon');
+            log(getUrl, true);
+            const img = new Image();
+            img.src = getUrl;
+            img.onload = () => log('✓ Image loaded');
+            img.onerror = () => log('✓ Image request sent (error expected)');
+        }, 500);
         
-        log('Method 3: Image beacon...');
-        const img = new Image();
-        img.src = url + '?' + query;
-        img.onload = () => log('✓ Image loaded');
-        img.onerror = () => log('✓ Image request sent (error expected)');
+        setTimeout(() => {
+            log('Method 3: POST fetch');
+            log(`${baseUrl} with body: ${JSON.stringify(Object.fromEntries(params))}`);
+            fetch(baseUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(Object.fromEntries(params))
+            })
+                .then(() => log('✓ POST fetch sent'))
+                .catch(e => log('✗ POST fetch error: ' + e.message));
+        }, 1000);
         
         log('---');
-        log('Check n8n webhook logs');
+        log('Check n8n webhook logs for results');
     </script>
 </body>
 </html>
