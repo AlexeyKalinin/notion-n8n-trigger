@@ -2,128 +2,44 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>n8n Trigger</title>
-    <style>
-        body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            font-family: -apple-system, system-ui, sans-serif;
-            background: #f5f5f5;
-        }
-        .container {
-            text-align: center;
-            padding: 40px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            min-width: 300px;
-        }
-        .icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-        .success { color: #4CAF50; }
-        .error { color: #f44336; }
-        .loading { color: #2196F3; }
-        
-        .message {
-            font-size: 18px;
-            margin-bottom: 24px;
-            color: #333;
-        }
-        
-        button {
-            background: #2196F3;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        button:hover {
-            background: #1976D2;
-        }
-        
-        .details {
-            margin-top: 20px;
-            font-size: 14px;
-            color: #666;
-            text-align: left;
-            background: #f5f5f5;
-            padding: 12px;
-            border-radius: 6px;
-            font-family: monospace;
-        }
-    </style>
+    <title>n8n</title>
 </head>
 <body>
-    <div class="container">
-        <div class="icon loading" id="icon">⏳</div>
-        <div class="message" id="message">Отправка данных...</div>
-        <button id="closeBtn" style="display:none;" onclick="window.close()">Закрыть окно</button>
-        <div class="details" id="details" style="display:none;"></div>
+    <div style="padding:20px; font-family:sans-serif;">
+        <p id="status">Отправка...</p>
     </div>
-    
     <script>
-        const WEBHOOKS = {
-            test: 'https://n8n.wefiftytwo.com/webhook-test/ats-score',
-            prod: 'https://n8n.wefiftytwo.com/webhook/ats-score'
-        };
+        // Both webhook URLs
+        const webhooks = [
+            'https://n8n.wefiftytwo.com/webhook-test/ats-score',
+            'https://n8n.wefiftytwo.com/webhook/ats-score'
+        ];
         
-        const params = new URLSearchParams(window.location.search);
-        const mode = params.get('mode') || 'test';
-        const autoClose = params.get('autoclose') !== 'false';
-        params.delete('mode');
-        params.delete('autoclose');
+        // Get parameters
+        const params = window.location.search;
         
-        const url = WEBHOOKS[mode] + '?' + params.toString();
-        
-        // Show details
-        document.getElementById('details').innerHTML = 
-            `Mode: ${mode}<br>` +
-            `Params: ${params.toString() || 'none'}<br>` +
-            `Auto-close: ${autoClose}`;
-        document.getElementById('details').style.display = 'block';
-        
-        // Send requests
-        const requests = [];
-        
-        // Method 1: sendBeacon (most reliable)
-        if (navigator.sendBeacon) {
-            requests.push(navigator.sendBeacon(url) ? 'sendBeacon: ✓' : 'sendBeacon: ✗');
-        }
-        
-        // Method 2: Image
-        const img = new Image();
-        img.src = url;
-        requests.push('Image: sent');
-        
-        // Method 3: Fetch with keepalive
-        fetch(url, {mode: 'no-cors', keepalive: true})
-            .then(() => requests.push('Fetch: ✓'))
-            .catch(() => requests.push('Fetch: ✗'));
-        
-        // Show success after short delay
-        setTimeout(() => {
-            document.getElementById('icon').className = 'icon success';
-            document.getElementById('icon').textContent = '✅';
-            document.getElementById('message').textContent = 'Успешно отправлено!';
-            document.getElementById('closeBtn').style.display = 'inline-block';
+        // Send to both webhooks
+        webhooks.forEach(webhook => {
+            const url = webhook + params;
             
-            // Auto close if enabled
-            if (autoClose) {
-                setTimeout(() => {
-                    window.close();
-                    // If window.close doesn't work, hide content
-                    document.body.innerHTML = '<div style="padding:20px">Можно закрыть это окно</div>';
-                }, 1500);
+            // Image beacon
+            const img = new Image();
+            img.src = url;
+            
+            // sendBeacon backup
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(url);
             }
-        }, 500);
+        });
+        
+        // Update status
+        document.getElementById('status').textContent = '✅ Отправлено! Окно закроется через 2 секунды...';
+        
+        // Close after 2 seconds
+        setTimeout(() => {
+            window.close();
+            document.body.innerHTML = '';
+        }, 2000);
     </script>
 </body>
 </html>
