@@ -6,53 +6,67 @@
     <style>
         body {
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             height: 100vh;
             margin: 0;
             font-family: -apple-system, system-ui, sans-serif;
-            background: #f0f0f0;
+            background: #f5f5f5;
         }
         .container {
             text-align: center;
-            background: white;
             padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-width: 300px;
         }
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }        .success {
-            color: #28a745;
+        .icon {
             font-size: 48px;
+            margin-bottom: 16px;
         }
-        .debug {
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .loading { color: #2196F3; }
+        
+        .message {
+            font-size: 18px;
+            margin-bottom: 24px;
+            color: #333;
+        }
+        
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+        
+        .details {
             margin-top: 20px;
-            font-size: 12px;
+            font-size: 14px;
             color: #666;
             text-align: left;
             background: #f5f5f5;
-            padding: 10px;
-            border-radius: 5px;
+            padding: 12px;
+            border-radius: 6px;
             font-family: monospace;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="spinner" id="spinner"></div>
-        <p id="status">Отправка данных в n8n...</p>
-        <div id="debug" class="debug" style="display:none;"></div>
+        <div class="icon loading" id="icon">⏳</div>
+        <div class="message" id="message">Отправка данных...</div>
+        <button id="closeBtn" style="display:none;" onclick="window.close()">Закрыть окно</button>
+        <div class="details" id="details" style="display:none;"></div>
     </div>
     
     <script>
@@ -62,43 +76,54 @@
         };
         
         const params = new URLSearchParams(window.location.search);
-        const debug = params.get('debug') === 'true';        const mode = params.get('mode') || 'test';
-        const webhookUrl = WEBHOOKS[mode];
-        
+        const mode = params.get('mode') || 'test';
+        const autoClose = params.get('autoclose') !== 'false';
         params.delete('mode');
-        params.delete('debug');
+        params.delete('autoclose');
         
-        if (debug) {
-            document.getElementById('debug').style.display = 'block';
-            document.getElementById('debug').innerHTML = 
-                `Mode: ${mode}<br>URL: ${webhookUrl}<br>Params: ${params.toString()}`;
-        }
+        const url = WEBHOOKS[mode] + '?' + params.toString();
+        
+        // Show details
+        document.getElementById('details').innerHTML = 
+            `Mode: ${mode}<br>` +
+            `Params: ${params.toString() || 'none'}<br>` +
+            `Auto-close: ${autoClose}`;
+        document.getElementById('details').style.display = 'block';
         
         // Send requests
-        const url = webhookUrl + '?' + params.toString();
+        const requests = [];
         
-        Promise.all([
-            fetch(url, {mode: 'no-cors'}),
-            fetch(webhookUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify(Object.fromEntries(params))
-            }),
-            new Promise(r => {
-                const img = new Image();
-                img.src = url;
-                img.onload = img.onerror = r;
-            })
-        ]).then(() => {
-            document.getElementById('spinner').style.display = 'none';
-            document.getElementById('status').innerHTML = '<div class="success">✓</div><p>Процесс запущен!</p>';            
-            if (!debug) {
+        // Method 1: sendBeacon (most reliable)
+        if (navigator.sendBeacon) {
+            requests.push(navigator.sendBeacon(url) ? 'sendBeacon: ✓' : 'sendBeacon: ✗');
+        }
+        
+        // Method 2: Image
+        const img = new Image();
+        img.src = url;
+        requests.push('Image: sent');
+        
+        // Method 3: Fetch with keepalive
+        fetch(url, {mode: 'no-cors', keepalive: true})
+            .then(() => requests.push('Fetch: ✓'))
+            .catch(() => requests.push('Fetch: ✗'));
+        
+        // Show success after short delay
+        setTimeout(() => {
+            document.getElementById('icon').className = 'icon success';
+            document.getElementById('icon').textContent = '✅';
+            document.getElementById('message').textContent = 'Успешно отправлено!';
+            document.getElementById('closeBtn').style.display = 'inline-block';
+            
+            // Auto close if enabled
+            if (autoClose) {
                 setTimeout(() => {
                     window.close();
-                    window.location.href = 'https://notion.so';
+                    // If window.close doesn't work, hide content
+                    document.body.innerHTML = '<div style="padding:20px">Можно закрыть это окно</div>';
                 }, 1500);
             }
-        });
+        }, 500);
     </script>
 </body>
 </html>

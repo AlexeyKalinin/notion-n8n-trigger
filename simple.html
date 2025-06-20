@@ -5,17 +5,32 @@
     <title>n8n</title>
 </head>
 <body>
+    <div style="padding:20px; font-family:sans-serif;">
+        <p id="status">Отправка...</p>
+    </div>
     <img id="beacon" style="display:none">
     <script>
-        // Ultra simple version - just image beacon
+        // Get URL parameters
         const params = window.location.search;
         const url = 'https://n8n.wefiftytwo.com/webhook-test/ats-score' + params;
         
+        // Method 1: Image beacon (most reliable)
         document.getElementById('beacon').src = url;
         
+        // Method 2: sendBeacon as backup
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon(url);
+        }
+        
+        // Update status
+        document.getElementById('status').textContent = '✅ Отправлено! Окно закроется через 2 секунды...';
+        
+        // Wait 2 seconds before closing to ensure delivery
         setTimeout(() => {
             window.close();
-        }, 100);
+            // If close doesn't work, just clear the page
+            document.body.innerHTML = '';
+        }, 2000);
     </script>
 </body>
 </html>

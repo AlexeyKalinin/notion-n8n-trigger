@@ -2,17 +2,33 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>n8n</title>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: -apple-system, system-ui, sans-serif;
+            background: #f5f5f5;
+        }
+        .status {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #4CAF50; }
+    </style>
 </head>
 <body>
+    <div class="status">
+        <div id="message">Отправка...</div>
+    </div>
+    
     <script>
-        // Anti-cache timestamp
-        const ts = Date.now();
-        
-        // Webhook endpoints
         const WEBHOOKS = {
             test: 'https://n8n.wefiftytwo.com/webhook-test/ats-score',
             prod: 'https://n8n.wefiftytwo.com/webhook/ats-score'
@@ -22,37 +38,33 @@
         const mode = params.get('mode') || 'test';
         params.delete('mode');
         
-        // Build URL with parameters
-        const baseUrl = WEBHOOKS[mode];
-        const queryString = params.toString();
-        const fullUrl = queryString ? `${baseUrl}?${queryString}&_t=${ts}` : `${baseUrl}?_t=${ts}`;
+        const url = WEBHOOKS[mode] + '?' + params.toString();
         
-        // Debug to console
-        console.log('Sending to:', fullUrl);
-        console.log('Parameters:', queryString);
-        
-        // Send with three methods
-        // 1. GET fetch
-        fetch(fullUrl, {mode: 'no-cors', cache: 'no-store'});
-        
-        // 2. Image beacon with full URL
-        const img = new Image();
-        img.src = fullUrl;
-        
-        // 3. POST with body
-        if (queryString) {
-            fetch(baseUrl + '?_t=' + ts, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify(Object.fromEntries(params))
-            });
+        // Method 1: Navigator.sendBeacon (survives page close)
+        if (navigator.sendBeacon) {
+            const success = navigator.sendBeacon(url);
+            console.log('sendBeacon:', success);
         }
         
-        // Close window faster
+        // Method 2: Image (also survives page close)
+        const img = new Image();
+        img.src = url;
+        
+        // Method 3: Fetch with keepalive
+        fetch(url, {
+            mode: 'no-cors',
+            keepalive: true
+        });
+        
+        // Show success and close after delay
+        document.getElementById('message').innerHTML = '<div class="success">✓ Отправлено!</div>';
+        
+        // Wait 1 second to ensure requests complete
         setTimeout(() => {
             window.close();
-            window.history.back();
-        }, 50);
+            // Fallback if close doesn't work
+            window.location.href = 'about:blank';
+        }, 1000);
     </script>
 </body>
 </html>
