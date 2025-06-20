@@ -6,14 +6,27 @@
 </head>
 <body>
     <script>
-        // Instant trigger - no UI
-        const params = new URLSearchParams(window.location.search);
-        fetch('https://n8n.wefiftytwo.com/webhook-test/810777bf-2175-4c53-b366-9cad9ac68e5c?' + params, {mode: 'no-cors'});
+        // Webhook endpoints
+        const WEBHOOKS = {
+            test: 'https://n8n.wefiftytwo.com/webhook-test/ats-score',
+            prod: 'https://n8n.wefiftytwo.com/webhook/ats-score'
+        };
         
-        // Try to close immediately
-        window.close();
-        // Fallback: go back in history
-        setTimeout(() => window.history.back(), 100);
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('mode') || 'test';
+        params.delete('mode');
+        
+        const url = WEBHOOKS[mode] + '?' + params.toString();
+        
+        // Send with three methods for reliability
+        fetch(url, {mode: 'no-cors'});
+        new Image().src = url;
+        
+        // Close window
+        setTimeout(() => {
+            window.close();
+            window.history.back();
+        }, 100);
     </script>
 </body>
 </html>

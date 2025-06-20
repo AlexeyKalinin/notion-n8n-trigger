@@ -2,50 +2,65 @@
 
 Простые HTML страницы для запуска n8n workflows из Notion через ссылки.
 
+## Webhook URLs
+
+- **Test**: `https://n8n.wefiftytwo.com/webhook-test/ats-score`
+- **Production**: `https://n8n.wefiftytwo.com/webhook/ats-score`
+
 ## Использование
 
-### 1. Основная страница (с анимацией)
+### Основная страница (с анимацией)
 ```
+# Test mode (по умолчанию)
 https://alexeykalinin.github.io/notion-n8n-trigger/?param1=value1&param2=value2
+
+# Production mode
+https://alexeykalinin.github.io/notion-n8n-trigger/?mode=prod&param1=value1&param2=value2
+
+# С отладкой (не закрывает окно)
+https://alexeykalinin.github.io/notion-n8n-trigger/?debug=true&param1=value1
 ```
 
-### 2. Мгновенный триггер (без UI)
+### Мгновенный триггер (без UI)
 ```
-https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?param1=value1&param2=value2
-```
+# Test mode
+https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?param1=value1
 
-### 3. Тестовая страница (простая)
-```
-https://alexeykalinin.github.io/notion-n8n-trigger/test.html?param1=value1&param2=value2
+# Production mode  
+https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?mode=prod&param1=value1
 ```
 
 ## Примеры для Notion
 
-**Простая ссылка:**
+**Простая ссылка (test):**
 ```
-https://alexeykalinin.github.io/notion-n8n-trigger/?action=send-email&to=test@mail.com
+https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?action=analyze&doc=resume
+```
+
+**Production с параметрами:**
+```
+https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?mode=prod&action=process&id=12345
 ```
 
 **С формулой Notion:**
 ```
-"https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?id=" + prop("ID") + "&status=" + prop("Status") + "&name=" + prop("Name")
-```
-
-**С кодированием русского текста:**
-```
-"https://alexeykalinin.github.io/notion-n8n-trigger/?task=" + replaceAll(replaceAll(replaceAll(prop("Задача"), " ", "%20"), "а", "%D0%B0"), "я", "%D1%8F")
+"https://alexeykalinin.github.io/notion-n8n-trigger/instant.html?mode=prod&id=" + prop("ID") + "&name=" + prop("Name")
 ```
 
 ## Как это работает
 
-1. Notion открывает ссылку в браузере
-2. JavaScript отправляет GET запрос на n8n webhook
-3. Все параметры из URL передаются в n8n в поле `query`
-4. Страница закрывается автоматически
+1. Страница отправляет запрос тремя способами для надежности:
+   - fetch с mode: 'no-cors'
+   - Image beacon
+   - POST запрос
+
+2. Параметр `mode` определяет какой webhook использовать (test/prod)
+
+3. Все остальные параметры передаются в n8n
 
 ## В n8n
 
-Данные приходят в Webhook node в формате:
+Данные приходят в Webhook node:
 ```json
 {
   "query": {
@@ -56,3 +71,11 @@ https://alexeykalinin.github.io/notion-n8n-trigger/?action=send-email&to=test@ma
 ```
 
 Используйте `{{ $json.query.param1 }}` для доступа к параметрам.
+
+## Отладка
+
+Если webhook не срабатывает:
+
+1. Добавьте `?debug=true` к URL чтобы увидеть какой webhook используется
+2. Проверьте что webhook в n8n активен и настроен на GET/POST
+3. Проверьте логи n8n для входящих запросов

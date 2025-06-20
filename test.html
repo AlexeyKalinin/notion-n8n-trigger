@@ -2,25 +2,65 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Test n8n</title>
+    <title>n8n Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        pre { background: #f5f5f5; padding: 10px; }
+        .log { margin: 5px 0; }
+    </style>
 </head>
 <body>
+    <h3>n8n Webhook Test</h3>
+    <div id="log"></div>
+    
     <script>
-        // Simple GET request test
+        const log = (msg) => {
+            const div = document.createElement('div');
+            div.className = 'log';
+            div.textContent = new Date().toISOString().substr(11, 8) + ' - ' + msg;
+            document.getElementById('log').appendChild(div);
+        };
+        
+        const WEBHOOKS = {
+            test: 'https://n8n.wefiftytwo.com/webhook-test/ats-score',
+            prod: 'https://n8n.wefiftytwo.com/webhook/ats-score'
+        };
+        
         const params = new URLSearchParams(window.location.search);
-        const url = 'https://n8n.wefiftytwo.com/webhook-test/810777bf-2175-4c53-b366-9cad9ac68e5c?' + params.toString();
+        const mode = params.get('mode') || 'test';
+        params.delete('mode');
         
-        // Method 1: GET request via image
+        const url = WEBHOOKS[mode];
+        const query = params.toString();
+        
+        log(`Mode: ${mode}`);
+        log(`URL: ${url}`);
+        log(`Params: ${query}`);
+        log('---');
+        
+        // Test all methods
+        log('Method 1: GET fetch...');
+        fetch(url + '?' + query, {mode: 'no-cors'})
+            .then(() => log('✓ GET fetch sent'))
+            .catch(e => log('✗ GET fetch error: ' + e.message));
+        
+        log('Method 2: POST fetch...');
+        fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(Object.fromEntries(params))
+        })
+            .then(() => log('✓ POST fetch sent'))
+            .catch(e => log('✗ POST fetch error: ' + e.message));
+        
+        log('Method 3: Image beacon...');
         const img = new Image();
-        img.src = url;
+        img.src = url + '?' + query;
+        img.onload = () => log('✓ Image loaded');
+        img.onerror = () => log('✓ Image request sent (error expected)');
         
-        // Method 2: GET request via fetch  
-        fetch(url, {mode: 'no-cors'});
-        
-        document.body.innerHTML = '<h2>Отправлено!</h2><p>Параметры: ' + params.toString() + '</p>';
-        
-        // Close after 2 seconds
-        setTimeout(() => window.close(), 2000);
+        log('---');
+        log('Check n8n webhook logs');
     </script>
 </body>
 </html>
