@@ -3,21 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <title>n8n Trigger</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        pre {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
+    <h3>Sending to n8n...</h3>
+    <pre id="log"></pre>
+    
     <script>
+        const log = (msg) => {
+            document.getElementById('log').innerHTML += msg + '\n';
+        };
+
         // n8n webhook URL
         const N8N_URL = 'https://n8n.wefiftytwo.com/webhook-test/810777bf-2175-4c53-b366-9cad9ac68e5c';
         
         const params = Object.fromEntries(new URLSearchParams(window.location.search));
         
+        log('URL: ' + N8N_URL);
+        log('Params: ' + JSON.stringify(params, null, 2));
+        log('---');
+        
         fetch(N8N_URL, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify(params)
         })
-        .then(() => document.body.innerHTML = 'OK')
-        .catch(() => document.body.innerHTML = 'ERROR');
+        .then(response => {
+            log('Status: ' + response.status);
+            log('Status Text: ' + response.statusText);
+            return response.text();
+        })
+        .then(data => {
+            log('Response: ' + data);
+            log('✅ SUCCESS');
+        })
+        .catch(error => {
+            log('❌ ERROR: ' + error.message);
+            
+            // Try again with no-cors mode
+            log('Trying with no-cors mode...');
+            fetch(N8N_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(params)
+            })
+            .then(() => log('Sent with no-cors (no response available)'))
+            .catch(e => log('Failed with no-cors: ' + e.message));
+        });
     </script>
 </body>
 </html>

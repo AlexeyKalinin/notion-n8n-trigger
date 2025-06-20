@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test n8n Webhook</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; cursor: pointer; }
+        #result { margin-top: 20px; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h2>Test n8n Webhook</h2>
+    
+    <button onclick="testDirect()">Test Direct POST</button>
+    <button onclick="testNoCors()">Test with no-cors</button>
+    <button onclick="testGet()">Test GET request</button>
+    
+    <div id="result"></div>
+    
+    <script>
+        const URL = 'https://n8n.wefiftytwo.com/webhook-test/810777bf-2175-4c53-b366-9cad9ac68e5c';
+        const result = document.getElementById('result');
+        
+        function testDirect() {
+            result.innerHTML = 'Testing direct POST...';
+            fetch(URL, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({test: 'direct', time: new Date().toISOString()})
+            })
+            .then(r => r.text())
+            .then(data => result.innerHTML = 'Success: ' + data)
+            .catch(e => result.innerHTML = 'Error: ' + e.message);
+        }
+        
+        function testNoCors() {
+            result.innerHTML = 'Testing no-cors POST...';
+            fetch(URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({test: 'no-cors', time: new Date().toISOString()})
+            })
+            .then(() => result.innerHTML = 'Sent (no response with no-cors)')
+            .catch(e => result.innerHTML = 'Error: ' + e.message);
+        }
+        
+        function testGet() {
+            result.innerHTML = 'Testing GET...';
+            fetch(URL + '?test=get&time=' + Date.now())
+            .then(r => r.text())
+            .then(data => result.innerHTML = 'Success: ' + data)
+            .catch(e => result.innerHTML = 'Error: ' + e.message);
+        }
+    </script>
+</body>
+</html>
