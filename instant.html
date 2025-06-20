@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>n8n</title>
+</head>
+<body>
+    <script>
+        // Instant trigger - no UI
+        const params = new URLSearchParams(window.location.search);
+        fetch('https://n8n.wefiftytwo.com/webhook-test/810777bf-2175-4c53-b366-9cad9ac68e5c?' + params, {mode: 'no-cors'});
+        
+        // Try to close immediately
+        window.close();
+        // Fallback: go back in history
+        setTimeout(() => window.history.back(), 100);
+    </script>
+</body>
+</html>
