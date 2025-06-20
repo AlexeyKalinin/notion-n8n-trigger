@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>n8n Trigger</title>
+</head>
+<body>
+    <script>
+        // n8n webhook URL
+        const N8N_URL = 'https://n8n.wefiftytwo.com/webhook-test/810777bf-2175-4c53-b366-9cad9ac68e5c';
+        
+        const params = Object.fromEntries(new URLSearchParams(window.location.search));
+        
+        fetch(N8N_URL, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(params)
+        })
+        .then(() => document.body.innerHTML = 'OK')
+        .catch(() => document.body.innerHTML = 'ERROR');
+    </script>
+</body>
+</html>
